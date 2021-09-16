@@ -65,6 +65,7 @@ class Bot:
         logger.info("Bot class is set with classifiers: %s", list(self.__classifiers.keys()))
 
     def run(self):
+        # initialize and start conversation with handlers
         updater = Updater(self.__token, persistence=self.__persistence)
         dispatcher = updater.dispatcher
         conv_handler = ConversationHandler(
@@ -92,6 +93,9 @@ class Bot:
         updater.idle()
 
     def start_session(self, update: Update, context: CallbackContext) -> int:
+        # setting parameters for chat from default if they weren't saved by persistence
+        # or set before
+        # all these are individual for each chat
         context.chat_data.setdefault('CLASSIFIER', self.__default_classifier)
         context.chat_data.setdefault('QUESTION_AMOUNT', self.__question_amount)
         context.chat_data.setdefault('BLOCKS', self.__blocks)
@@ -290,22 +294,27 @@ def main():
     st_q = config.getint('bot', 'standard_questions', fallback=None)
     gen_q = config.getint('bot', 'generated_questions', fallback=None)
 
-    # initialize classifiers and bind output function
+    # initialize classifiers and bind output function that prettify classifiers row output
+    # could be added different variants of these
     single_cls = SingleEmotionClassifier(device=device)
     multiple_cls = MultipleEmotionsClassifier(device=device)
     single_cls.output = single_cl_output
     multiple_cls.output = multiple_cl_output
 
-    classifiers = {'single': single_cls, 'multiple': multiple_cls}
+    # to add more classifiers to bot just add it to this dict
+    classifiers: Dict[str, ClassifierAbstract] = {'single': single_cls, 'multiple': multiple_cls}
 
     # there is no checks in handlers for this list to be not empty for now
     # so it's better to ensure it has enough questions
+    # represents
     standard_questions = []
     dir_path = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(dir_path, 'standard_questions.txt'), 'r') as f:
         standard_questions = f.read().split('\n')
 
+    # to save state of conversation with all context data to file
     persistence = PicklePersistence(filename='sessions_data', on_flush=False)
+
     bot = Bot(token, classifiers, standard_questions, 'multiple',
               blocks=blocks,
               st_q=st_q,

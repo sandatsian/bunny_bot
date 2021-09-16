@@ -22,11 +22,13 @@ def answer_is_full(answer, pipeline_model):
             len(d.get('ADJ', [])) > 0 or len(d.get('ADV', [])) > 0)
 
 
+# wrapping function to initialize model
 def answer_is_full_init():
     model = spacy.load("en_core_web_sm")
     return partial(answer_is_full, pipeline_model=model)
 
 
+# generates questions of given amount based on context string provided
 def generate_questions(context, amount, question_model):
     return list(map(lambda el: el['question'],
                     question_model.generate(article=context,
@@ -39,6 +41,7 @@ def generate_questions_init():
     return partial(generate_questions, question_model=model)
 
 
+# analyze and generate brief summary of text
 def get_summary(text, tokenizer, model, device, sent_detector):
     preprocess_text = text.strip().replace("\n", "")
     t5_prepared_Text = "summarize: " + preprocess_text
